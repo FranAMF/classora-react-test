@@ -19,13 +19,14 @@ npm run test
 ```
 
 `npm run test:watch` ejecuta los tests en modo interactivo.
-Todavía no hay tests: se añadirán al implementar los ejercicios.
+`npm run build` comprueba TypeScript y genera la compilación de producción;
+`npm run lint` ejecuta el linter y `npm run test` ejecuta los tests una vez.
+
+También están disponibles `npm run typecheck` para comprobar TypeScript y
+`npm run preview` para previsualizar la compilación.
 
 ## Pendiente
 
-- Pregunta 1: revisión y corrección de TicketsPage.
-- Pregunta 2A: contrato openapi-rest.yml.
-- Pregunta 2B: useTicketListParams y tests.
-- Pregunta 3: useSetDueDate, permisos y gestión de caché.
-
-La base no contiene las soluciones de los ejercicios.
+- Pregunta 1: documentar los problemas por gravedad y su impacto en
+  `src/exercises/question-1/review.md` y entregar la versión corregida en
+  `src/exercises/question-1/TicketsPage.tsx`.
