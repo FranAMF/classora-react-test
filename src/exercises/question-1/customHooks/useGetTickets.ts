@@ -24,14 +24,16 @@ export function useGetTickets({
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    setTickets([]);
+    setTotal(0);
+    setLoading(true);
+    setError(null);
+
     // Esperamos a que la búsqueda se estabilice antes de cargar nada.
     if (search !== debouncedSearch) return;
 
     const controller = new AbortController();
     let active = true; // Lo usamos para evitar la ejecución del then y catch en caso de abortar la peticion
-
-    setLoading(true);
-    setError(null);
 
     const query = new URLSearchParams({
       offset: String(offset),
@@ -59,6 +61,8 @@ export function useGetTickets({
       })
       .catch((error) => {
         if (active && !controller.signal.aborted) {
+          setTickets([]);
+          setTotal(0);
           setError(
             error instanceof Error
               ? error.message
