@@ -1,0 +1,543 @@
+openapi: 3.0.3
+info:
+  title: API de tickets de seguridad de Classora
+  version: 1.0.0
+  description: >-
+    Contrato de la pregunta 2, parte A. Los límites y comportamientos no fijados
+    por el enunciado se documentan como decisiones en las notas de la entrega.
+servers:
+  - url: https://api.example.com
+    description: Servidor de ejemplo; no representa un backend disponible.
+security:
+  - BearerAuth: []
+tags:
+  - name: Tickets
+    description: Consulta de tickets.
+  - name: Usuario
+    description: Consulta de permisos del usuario autenticado.
+paths:
+  /api/v1/tickets:
+    get:
+      operationId: listTickets
+      tags: [Tickets]
+      summary: Listar tickets
+      description: >-
+        Devuelve un listado paginado de tickets de seguridad. Permite buscar por
+        texto, filtrar por estado y severidad, y configurar el campo y el sentido
+        de ordenación. La respuesta incluye los tickets y los metadatos de
+        paginación. Devuelve 422 si algún parámetro es inválido.
+      parameters:
+        - $ref: "#/components/parameters/Offset"
+        - $ref: "#/components/parameters/Limit"
+        - $ref: "#/components/parameters/SearchQuery"
+        - $ref: "#/components/parameters/StateFilter"
+        - $ref: "#/components/parameters/SeverityFilter"
+        - $ref: "#/components/parameters/Sort"
+        - $ref: "#/components/parameters/Direction"
+      responses:
+        "200":
+          $ref: "#/components/responses/TicketList"
+        # Posible respuesta de autenticación; no especificada en el enunciado.
+        # '401':
+        #   $ref: '#/components/responses/Unauthorized'
+        "422":
+          $ref: "#/components/responses/InvalidListParameters"
+  /api/v1/tickets/{id}:
+    patch:
+      operationId: setTicketDueDate
+      tags: [Tickets]
+      summary: Fijar la fecha compromiso de un ticket
+      description: >-
+        Fija la fecha compromiso (dueDate) del ticket identificado por id y devuelve
+        el ticket actualizado. Si su estado era REPORTED, pasa automáticamente a
+        IN_PROGRESS. Requiere el permiso tickets.update; devuelve 403 si el usuario
+        no dispone de él y 409 si el ticket está en DONE.
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        description: Nueva fecha compromiso del ticket.
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SetDueDateRequest"
+      responses:
+        "200":
+          $ref: "#/components/responses/UpdatedTicket"
+        # Posible respuesta de autenticación; no especificada en el enunciado.
+        # "401":
+        #   $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/MissingUpdatePermission"
+        # Posible respuesta para un ticket inexistente; no especificada.
+        # "404":
+        #   $ref: "#/components/responses/TicketNotFound"
+        "409":
+          $ref:
+            "#/components/responses/TicketDone"
+            # Propuesta adicional; no especificada en el enunciado.
+            # "422":
+            #   $ref: "#/components/responses/InvalidTicketUpdate"
+  /api/v1/me:
+    get:
+      operationId: getCurrentUserPermissions
+      tags: [Usuario]
+      summary: Consultar los permisos del usuario autenticado
+      description: >-
+        Devuelve los permisos del usuario autenticado en permissions, según
+        lo indicado en la pregunta 3 del enunciado. El permiso tickets.update
+        permite fijar la fecha compromiso de un ticket.
+      responses:
+        "200":
+          $ref: "#/components/responses/CurrentUserPermissions"
+        # Posible respuesta de autenticación; no especificada en el enunciado.
+        # "401":
+        #   $ref: "#/components/responses/Unauthorized"
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Token bearer de autenticación; no se presupone su formato ni que sea JWT.
+  parameters:
+    Offset:
+      name: offset
+      in: query
+      required: false
+      description: Número de resultados filtrados que se omiten, con base cero.
+      example: 0
+      schema:
+        type: integer
+        description: Desplazamiento dentro del listado filtrado.
+        minimum: 0
+        maximum: 2147483647
+        default: 0
+        example: 0
+    Limit:
+      name: limit
+      in: query
+      required: false
+      description: Número máximo de tickets que se devuelven en la página.
+      example: 20
+      schema:
+        type: integer
+        description: Tamaño de página solicitado.
+        minimum: 1
+        maximum: 100
+        default: 20
+        example: 20
+    SearchQuery:
+      name: q
+      in: query
+      required: false
+      description: Texto de búsqueda para filtrar tickets.
+      example: payments
+      schema:
+        type: string
+        description: Texto de búsqueda; por defecto es una cadena vacía.
+        maxLength: 200
+        default: ""
+        example: payments
+    StateFilter:
+      name: state
+      in: query
+      required: false
+      description: Estado a filtrar; ALL incluye todos los estados.
+      example: IN_PROGRESS
+      schema:
+        type: string
+        description: Estado del filtro, separado del estado real del ticket.
+        maxLength: 16
+        enum: [ALL, REPORTED, IN_PROGRESS, PENDING_SECURITY, DONE]
+        default: ALL
+        example: IN_PROGRESS
+    SeverityFilter:
+      name: severity
+      in: query
+      required: false
+      description: Severidad a filtrar; ALL incluye todas las severidades.
+      example: HIGH
+      schema:
+        type: string
+        description: Severidad del filtro, separada de la severidad real del ticket.
+        maxLength: 8
+        enum: [ALL, CRITICAL, HIGH, MEDIUM, LOW]
+        default: ALL
+        example: HIGH
+    Sort:
+      name: sort
+      in: query
+      required: false
+      description: Campo por el que se ordenan los resultados antes de paginar.
+      example: TARGET_DATE
+      schema:
+        type: string
+        description: TARGET_DATE ordena por targetDate y LAST_MODIFIED por lastModified.
+        maxLength: 13
+        enum: [TARGET_DATE, LAST_MODIFIED]
+        default: LAST_MODIFIED
+        example: TARGET_DATE
+    Direction:
+      name: direction
+      in: query
+      required: false
+      description: Sentido de la ordenación del campo elegido.
+      example: ASC
+      schema:
+        type: string
+        description: ASC para orden ascendente y DESC para descendente.
+        maxLength: 4
+        enum: [ASC, DESC]
+        default: DESC
+        example: ASC
+    TicketId:
+      name: id
+      in: path
+      required: true
+      description: Identificador opaco del ticket; no se presupone UUID.
+      example: ticket-1024
+      schema:
+        type: string
+        description: Identificador no vacío del ticket que se desea actualizar.
+        minLength: 1
+        maxLength: 128
+        example: ticket-1024
+  schemas:
+    TicketState:
+      type: string
+      description: Estado real de un ticket; ALL pertenece únicamente al filtro.
+      maxLength: 16
+      enum: [REPORTED, IN_PROGRESS, PENDING_SECURITY, DONE]
+      example: IN_PROGRESS
+    Severity:
+      type: string
+      description: Severidad real de un ticket; ALL pertenece únicamente al filtro.
+      maxLength: 8
+      enum: [CRITICAL, HIGH, MEDIUM, LOW]
+      example: HIGH
+    Ticket:
+      type: object
+      description: Ticket de seguridad.
+      required:
+        [
+          id,
+          key,
+          asset,
+          assignedTeam,
+          assignee,
+          severity,
+          state,
+          targetDate,
+          dueDate,
+          lastModified,
+        ]
+      properties:
+        id:
+          type: string
+          description: identificador del ticket.
+          minLength: 1
+          maxLength: 128
+          example: ticket-1024
+        key:
+          type: string
+          description: Clave visible del ticket.
+          maxLength: 64
+          example: SEC-1024
+        asset:
+          type: string
+          description: Activo afectado; el valor literal None representa un activo desconocido.
+          maxLength: 255
+          example: payments-api
+        assignedTeam:
+          type: string
+          nullable: true
+          description: Equipo asignado o null si no hay equipo asignado.
+          maxLength: 255
+          example: Platform Security
+        assignee:
+          type: string
+          format: email
+          description: Correo electrónico de la persona asignada.
+          maxLength: 254
+          example: ana@example.com
+        severity:
+          $ref: "#/components/schemas/Severity"
+        state:
+          $ref: "#/components/schemas/TicketState"
+        targetDate:
+          type: string
+          format: date-time
+          description: Fecha objetivo RFC 3339, con Z u offset horario.
+          maxLength: 64
+          example: "2026-11-30T23:59:59Z"
+        dueDate:
+          type: string
+          format: date-time
+          nullable: true
+          description: Fecha compromiso RFC 3339 o null si no se ha fijado.
+          maxLength: 64
+          example: "2026-11-15T10:00:00Z"
+        lastModified:
+          type: string
+          format: date-time
+          description: Fecha de última modificación RFC 3339, con Z u offset horario.
+          maxLength: 64
+          example: "2026-11-13T14:00:00Z"
+      example:
+        id: ticket-1024
+        key: SEC-1024
+        asset: payments-api
+        assignedTeam: Platform Security
+        assignee: ana@example.com
+        severity: HIGH
+        state: IN_PROGRESS
+        targetDate: "2026-11-30T23:59:59Z"
+        dueDate: "2026-11-15T10:00:00Z"
+        lastModified: "2026-11-13T14:00:00Z"
+    Pagination:
+      type: object
+      description: Metadatos de la página y total de tickets que cumplen los filtros.
+      required: [offset, limit, totalElements]
+      properties:
+        offset:
+          type: integer
+          description: Desplazamiento solicitado, con base cero.
+          minimum: 0
+          maximum: 2147483647
+          example: 0
+        limit:
+          type: integer
+          description: Tamaño máximo solicitado para esta página.
+          minimum: 1
+          maximum: 100
+          example: 20
+        totalElements:
+          type: integer
+          description: Total de tickets filtrados antes de aplicar offset y limit.
+          minimum: 0
+          maximum: 2147483647
+          example: 134
+      example:
+        offset: 0
+        limit: 20
+        totalElements: 134
+    TicketPage:
+      type: object
+      description: Página de tickets acompañada de sus metadatos de paginación.
+      required: [data, pagination]
+      properties:
+        data:
+          type: array
+          description: Tickets de la página; su cantidad no supera el limit solicitado.
+          maxItems: 100
+          items:
+            $ref: "#/components/schemas/Ticket"
+          example: []
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+      example:
+        data:
+          - id: ticket-1024
+            key: SEC-1024
+            asset: payments-api
+            assignedTeam: null
+            assignee: ana@example.com
+            severity: HIGH
+            state: REPORTED
+            targetDate: "2026-11-30T23:59:59Z"
+            dueDate: null
+            lastModified: "2026-11-12T09:00:00+01:00"
+        pagination:
+          offset: 0
+          limit: 20
+          totalElements: 1
+    SetDueDateRequest:
+      type: object
+      description: Datos para fijar la fecha compromiso de un ticket.
+      required: [dueDate]
+      properties:
+        dueDate:
+          type: string
+          format: date-time
+          description: Nueva fecha compromiso en formato RFC 3339.
+          maxLength: 64
+          example: "2026-11-15T10:00:00Z"
+      example:
+        dueDate: "2026-11-15T10:00:00Z"
+    UserPermissions:
+      type: object
+      description: Permisos del usuario autenticado.
+      required: [permissions]
+      properties:
+        permissions:
+          type: array
+          description: Lista de permisos concedidos al usuario.
+          maxItems: 100
+          items:
+            type: string
+            description: Identificador de permiso; no es un enum de negocio.
+            maxLength: 128
+            example: tickets.update
+          example: [tickets.update]
+      example:
+        permissions: [tickets.update]
+    ProblemDetails:
+      type: object
+      description: >-
+        Error basado en RFC 9457. Este contrato exige los cinco campos siguientes
+        como decisión propia; la RFC no obliga a incluirlos todos.
+      required: [type, title, status, detail, instance]
+      properties:
+        type:
+          type: string
+          format: uri
+          description: URI que identifica el tipo de problema; about:blank usa la semántica del código HTTP.
+          maxLength: 2048
+          example: about:blank
+        title:
+          type: string
+          description: Resumen legible del tipo de problema.
+          maxLength: 200
+          example: Forbidden
+        status:
+          type: integer
+          description: Código HTTP del error, idéntico al de la respuesta.
+          minimum: 400
+          maximum: 599
+          example: 403
+        detail:
+          type: string
+          description: Explicación de esta ocurrencia concreta del problema.
+          maxLength: 2000
+          example: Falta el permiso tickets.update para fijar la fecha compromiso.
+        instance:
+          type: string
+          format: uri-reference
+          description: Referencia URI que identifica la ocurrencia del problema.
+          maxLength: 2048
+          example: /api/v1/tickets/ticket-1024
+      example:
+        type: about:blank
+        title: Forbidden
+        status: 403
+        detail: Falta el permiso tickets.update para fijar la fecha compromiso.
+        instance: /api/v1/tickets/ticket-1024
+  responses:
+    TicketList:
+      description: Página de tickets que cumplen los filtros.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/TicketPage"
+    UpdatedTicket:
+      description: Ticket actualizado tras fijar dueDate y aplicar la transición de estado correspondiente.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Ticket"
+    CurrentUserPermissions:
+      description: Permisos del usuario autenticado, que pueden estar vacíos.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/UserPermissions"
+    Unauthorized:
+      description: Autenticación bearer ausente o inválida; aplicable a las tres operaciones.
+      headers:
+        WWW-Authenticate:
+          description: Desafío de autenticación bearer.
+          example: Bearer
+          schema:
+            type: string
+            description: Esquema de autenticación requerido.
+            maxLength: 256
+            example: Bearer
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          examples:
+            listTickets:
+              summary: Listado sin autenticación válida
+              value:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: Se requiere autenticación bearer válida para listar los tickets.
+                instance: /api/v1/tickets
+            setTicketDueDate:
+              summary: Actualización sin autenticación válida
+              value:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: Se requiere autenticación bearer válida para fijar la fecha compromiso.
+                instance: /api/v1/tickets/ticket-1024
+            getCurrentUserPermissions:
+              summary: Consulta de permisos sin autenticación válida
+              value:
+                type: about:blank
+                title: Unauthorized
+                status: 401
+                detail: Se requiere autenticación bearer válida para consultar los permisos.
+                instance: /api/v1/me
+    InvalidListParameters:
+      description: Algún parámetro del listado incumple su tipo, límites o valores admitidos.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: about:blank
+            title: Unprocessable Content
+            status: 422
+            detail: limit debe ser un entero entre 1 y 100.
+            instance: /api/v1/tickets?limit=101
+    MissingUpdatePermission:
+      description: El usuario autenticado no tiene el permiso tickets.update.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: about:blank
+            title: Forbidden
+            status: 403
+            detail: Falta el permiso tickets.update para fijar la fecha compromiso.
+            instance: /api/v1/tickets/ticket-1024
+    TicketNotFound:
+      description: No existe un ticket con el identificador solicitado.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: about:blank
+            title: Not Found
+            status: 404
+            detail: No existe el ticket ticket-1024.
+            instance: /api/v1/tickets/ticket-1024
+    TicketDone:
+      description: El ticket está en DONE y no admite actualizar la fecha compromiso.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: about:blank
+            title: Conflict
+            status: 409
+            detail: No se puede fijar la fecha compromiso de un ticket en DONE.
+            instance: /api/v1/tickets/ticket-1024
+    InvalidTicketUpdate:
+      description: Los datos enviados para actualizar el ticket incumplen el contrato.
+      content:
+        application/problem+json:
+          schema:
+            $ref: "#/components/schemas/ProblemDetails"
+          example:
+            type: about:blank
+            title: Unprocessable Content
+            status: 422
+            detail: dueDate debe ser una fecha RFC 3339 no nula.
+            instance: /api/v1/tickets/ticket-1024
