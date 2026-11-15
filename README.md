@@ -1,32 +1,35 @@
-# Classora — Prueba técnica React Senior
+# Classora · Prueba técnica React Senior
 
-Base con Vite, React 18, TypeScript estricto, React Router 6 y TanStack Query 5.
-Tests preparados con Vitest, Testing Library y jsdom.
+Resolución de los tres ejercicios con React 18 y TypeScript estricto, sobre Vite. Se utilizan React Router 6, TanStack Query 5 y Vitest con Testing Library.
 
-## Inicio
+## Ejecutar el proyecto
+
+Esta entrega está orientada a la lectura y revisión del código y de las
+notas de cada ejercicio. No incluye una aplicación funcional completa
+ni un backend.
+
+Para instalar las dependencias y ejecutar las comprobaciones:
 
 ```sh
 npm ci
-npm run dev
 ```
+
+## Organización
+
+La estructura está organizada por ejercicios para facilitar su identificación y revisión por el evaluador. No pretende representar la estructura de una aplicación real en producción.
+
+- **Pregunta 1:** revisión de código y propuesta de solución.
+- **Pregunta 2:** contrato OpenAPI y hook de filtros sincronizados con la URL.
+- **Pregunta 3:** actualización optimista de la fecha compromiso y permisos.
+
+El código está en `src/exercises`, separado por pregunta. Las explicaciones y decisiones específicas se encuentran en las notas de cada ejercicio. El contrato de la API está en `openapi-rest.yml`, en la raíz.
 
 ## Comprobaciones
 
+Para ejecutar los tests:
+
 ```sh
-npm run build
-npm run lint
 npm run test
 ```
 
-`npm run test:watch` ejecuta los tests en modo interactivo.
-`npm run build` comprueba TypeScript y genera la compilación de producción;
-`npm run lint` ejecuta el linter y `npm run test` ejecuta los tests una vez.
-
-También están disponibles `npm run typecheck` para comprobar TypeScript y
-`npm run preview` para previsualizar la compilación.
-
-## Pendiente
-
-- Pregunta 1: documentar los problemas por gravedad y su impacto en
-  `src/exercises/question-1/review.md` y entregar la versión corregida en
-  `src/exercises/question-1/TicketsPage.tsx`.
+Estos comandos comprueban los tipos, ejecutan el linter y los tests, y generan la compilación de producción. Para ejecutar los tests en modo interactivo: `npm run test:watch`.

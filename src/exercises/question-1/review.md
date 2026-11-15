@@ -1,5 +1,7 @@
 # Revisión de código
 
+En el ejercicio 1 se ha realizado una revisión de código y se han aplicado las correcciones manteniendo el enfoque original. Entre otros cambios, la petición se ha extraído al hook useGetTickets. Aunque podría haberse utilizado TanStack Query, se ha optado por no introducir ese cambio para mantener la refactorización centrada en los problemas detectados.
+
 ## Problemas por gravedad, de mayor a menor
 
 ### Gravedad crítica
