@@ -18,6 +18,7 @@ Las operaciones están en `paths`. Los parámetros, esquemas y respuestas reutil
 - La ordenación admite `TARGET_DATE` y `LAST_MODIFIED`.
 - El PATCH exige una fecha no nula.
 - Los errores adicionales quedan como propuestas comentadas en las operaciones.
+- Añadidas ciertas respuestas 401
 
 ## Campos obligatorios y nulos
 
